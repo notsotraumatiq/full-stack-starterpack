@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Backend Starter project",
   "main": "index.ts",
   "scripts": {
     "start": "nodemon --exec ts-node src/index.ts",
@@ -15,7 +15,9 @@
   },
   "devDependencies": {
     "@types/koa": "^2.15.0",
+    "@types/node": "^20.11.28",
     "nodemon": "^3.1.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.2"
   }
 }
