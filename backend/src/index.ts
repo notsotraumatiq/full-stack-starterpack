@@ -5,6 +5,10 @@ import bodyParser from "koa-bodyparser";
 import axios from "axios";
 
 dotenv.config();
+
+// const API_KEY="sk_prod_TfMbARhdgues5AuIosvvdAC9WsA5kXiZlW8HZPaRDlIbCpSpLsXBeZO7dCVZQwHAY3P4VSBPiiC33poZ1tdUj2ljOzdTCCOSpUZ_3912"
+// const FORM_ID="cLZojxk94ous"
+
 const app = new koa();
 const router = new Router();
 
@@ -17,149 +21,54 @@ app.listen(3000, () => {
 
 // :form_id/filteredResponses
 router.get("/", async (ctx) => {
+  let serverResponse;
+  const filtersParam: any = ctx.query.query;
   try {
-    const response = await axios.get(
-      `https://api.fillout.com/v1/api/forms/${process.env.FORM_ID}`,
+    serverResponse = await axios.get(
+      `https://api.fillout.com/v1/api/forms/${process.env.FORM_ID}/submissions`,
       {
         headers: {
           Authorization: `Bearer ${process.env.API_KEY}`,
         },
       }
     );
-    console.log(ctx.request.query);
 
-    // test object
-    const filters: FilterClauseType[] = [
-      {
-        id: "nameId",
-        condition: Condition.Equals,
-        value: "Timmy",
-      },
-      {
-        id: "kc6S6ThWu3cT5PVZkwKUg4",
-        condition: Condition.LessThan,
-        value: "2024-02-23T05:01:47.691Z",
-      },
-    ];
-    const request = {
-      responses: [
-        {
-          submissionId: "ab9959b2-73e8-4994-85b9-56e780b89ce3",
-          submissionTime: "2024-02-27T19:37:08.228Z",
-          lastUpdatedAt: "2024-02-27T19:37:08.228Z",
-          questions: [
-            {
-              id: "nameId",
-              name: "Anything else you'd like to share before your call?",
-              type: "LongAnswer",
-              value: "Timmy",
-            },
-            {
-              id: "bE2Bo4cGUv49cjnqZ4UnkW",
-              name: "What is your name?",
-              type: "ShortAnswer",
-              value: "Johnny",
-            },
-            {
-              id: "dSRAe3hygqVwTpPK69p5td",
-              name: "Please select a date to schedule your yearly check-in.",
-              type: "DatePicker",
-              value: "2024-02-01",
-            },
-            {
-              id: "fFnyxwWa3KV6nBdfBDCHEA",
-              name: "How many employees work under you?",
-              type: "NumberInput",
-              value: 2,
-            },
-            {
-              id: "jB2qDRcXQ8Pjo1kg3jre2J",
-              name: "Which department do you work in?",
-              type: "MultipleChoice",
-              value: "Engineering",
-            },
-            {
-              id: "kc6S6ThWu3cT5PVZkwKUg4",
-              name: "What is your email?",
-              type: "EmailInput",
-              value: "johnny@fillout.com",
-            },
-          ],
-          calculations: [],
-          urlParameters: [],
-          quiz: {},
-          documents: [],
-        },
-
-        {
-          calculations: [],
-          urlParameters: [],
-          quiz: {},
-          documents: [],
-        },
-      ],
-      totalResponses: 11,
-      pageCount: 1,
-    };
-
-    const { questions } = request.responses[0];
-
-    // filter the responses
-    let filteredResponses: any = [];
-
-    if (filters.length == 0) {
+    if (filtersParam.length == 0) {
       ctx.status = 200;
       ctx.body = "No filters provided. Please provide filters.";
       return;
     }
-    if (filters.length > 0) {
-      filteredResponses = filters.map((filter) => {
-        const question = questions?.find(
-          (question) => question.id === filter.id
-        );
-        if (!question) {
-          return;
-        }
 
-        if (question.id == "birthdayId") {
-          question.value = new Date(question.value).getTime();
-          filter.value = new Date(filter.value).getTime();
-        }
-        // condition
-        switch (filter.condition) {
-          case Condition.Equals:
-            if (question.value === filter.value) {
-              return question;
-            }
-            break;
-          case Condition.DoesNotEqual:
-            if (question.value !== filter.value) {
-              return question;
-            }
-            break;
-          case Condition.GreaterThan:
-            if (question.value > filter.value) {
-              return question;
-            }
-            break;
-          case Condition.LessThan:
-            if (question.value < filter.value) {
-              return question;
-            }
-            break;
-          default:
-            return;
-        }
-      });
-    }
-    console.log(filteredResponses, "filteredResponses");
-    filteredResponses = filteredResponses.filter(
-      (response: any) => response !== undefined
-    );
-    // MERGE THE FILTERED RESPONSES
-    let finalResponse: any = [];
+    const submissions: Response[] = serverResponse.data.responses;
+    let submissionCount = 0;
+    let filteredSubmissionQuestions: Response[] = [];
 
-    // return JSON.stringify(response.data);
+    submissions.forEach((submission) => {
+      let filteredSubmission: any = {};
+      let filteredQuestion = parseQuestions(
+        submission.questions as Question[],
+        filtersParam
+      );
+
+      if (filteredQuestion) {
+        filteredSubmission = {
+          ...submission,
+        };
+        filteredSubmission.questions = filteredQuestion;
+        filteredSubmissionQuestions.push(filteredSubmission);
+        submissionCount++;
+      }
+    });
+
+    const finalResponse = {
+      ...filteredSubmissionQuestions,
+      totalResponses: submissionCount,
+      pageCount: 1,
+    };
+
+    ctx.status = 200;
+    ctx.body = filteredSubmissionQuestions;
+    return;
   } catch (error) {
     ctx.status = 500;
     ctx.body = error;
@@ -181,33 +90,74 @@ enum Condition {
   LessThan = "less_than",
 }
 
-// each of these filters should be applied like an AND in a "where" clause
-// in SQL
-// type ResponseFiltersType = ResponseFilter[];
+interface Question {
+  id: string;
+  name: string;
+  type: string;
+  value: string | number | Date;
+}
 
-function checkCondition(question: any, filter: any, condition: any) {
-  switch (filter.condition) {
-    case Condition.Equals:
-      if (question.value === filter.value) {
-        return question;
-      }
-      break;
-    case Condition.DoesNotEqual:
-      if (question.value !== filter.value) {
-        return question;
-      }
-      break;
-    case Condition.GreaterThan:
-      if (question.value > filter.value) {
-        return question;
-      }
-      break;
-    case Condition.LessThan:
-      if (question.value < filter.value) {
-        return question;
-      }
-      break;
-    default:
+interface Response {
+  submissionId?: string;
+  submissionTime?: string;
+  lastUpdatedAt?: string;
+  questions: Question[];
+  calculations?: any[];
+  urlParameters?: any[];
+  quiz?: object;
+  documents?: any[];
+}
+
+interface finalResponse {
+  responses: Response[];
+  totalResponses: number;
+  pageCount: number;
+}
+
+interface Request {
+  responses: Response[];
+  totalResponses: number;
+  pageCount: number;
+}
+
+function parseQuestions(questions: Question[], filters: FilterClauseType[]) {
+  let filteredTruth: boolean[] = [];
+
+  filters.forEach((filter) => {
+    const question: Question | undefined = questions.find(
+      (question) => question.id === filter.id
+    );
+    if (!question) {
       return;
+    }
+
+    if (question.id == "birthdayId") {
+      question.value = new Date(question.value).getTime();
+      filter.value = new Date(filter.value).getTime();
+    }
+    // condition
+    filteredTruth.push(
+      evalCondition(question.value, filter.value, filter.condition)
+    );
+  });
+  if (filteredTruth.every((truth) => truth)) {
+    return questions;
+  }
+}
+
+function evalCondition(
+  questionValue: string | number | Date,
+  filterValue: string | number,
+  condition: Condition
+) {
+  switch (condition) {
+    case Condition.Equals:
+      return questionValue === filterValue;
+    case Condition.DoesNotEqual:
+      return questionValue !== filterValue;
+    case Condition.GreaterThan:
+      return questionValue > filterValue;
+    case Condition.LessThan:
+      return questionValue < filterValue;
   }
 }
