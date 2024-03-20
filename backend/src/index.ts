@@ -16,13 +16,26 @@ app.listen(80, () => {
   console.log("Server running on port 80");
 });
 
-// :form_id/filteredResponses
-router.get("/", async (ctx) => {
+router.get("/:form_id/filteredResponses", async (ctx) => {
   let serverResponse;
-  const filtersParam: any = ctx.query.query;
+  const params = ctx.params;
+  const filtersParam: any = ctx.query;
+
+  if (
+    !params ||
+    !params.form_id ||
+    !filtersParam ||
+    !filtersParam.query ||
+    filtersParam.query.length == 0
+  ) {
+    ctx.status = 400;
+    ctx.body = "Form ID and filters are required";
+    return;
+  }
+
   try {
     serverResponse = await axios.get(
-      `https://api.fillout.com/v1/api/forms/${process.env.FORM_ID}/submissions`,
+      `https://api.fillout.com/v1/api/forms/${params.form_id}/submissions`,
       {
         headers: {
           Authorization: `Bearer ${process.env.API_KEY}`,
@@ -30,13 +43,8 @@ router.get("/", async (ctx) => {
       }
     );
 
-    if (filtersParam.length == 0) {
-      ctx.status = 200;
-      ctx.body = "No filters provided. Please provide filters.";
-      return;
-    }
-
     const submissions: Response[] = serverResponse.data.responses;
+    const responsePageCount = serverResponse.data.pageCount;
     let submissionCount = 0;
     let filteredSubmissionQuestions: Response[] = [];
 
@@ -44,7 +52,7 @@ router.get("/", async (ctx) => {
       let filteredSubmission: any = {};
       let filteredQuestion = parseQuestions(
         submission.questions as Question[],
-        filtersParam
+        JSON.parse(filtersParam.query)
       );
 
       if (filteredQuestion) {
@@ -53,22 +61,23 @@ router.get("/", async (ctx) => {
         };
         filteredSubmission.questions = filteredQuestion;
         filteredSubmissionQuestions.push(filteredSubmission);
-        submissionCount++;
+        submissionCount += submission.questions.length;
       }
     });
 
     const finalResponse = {
-      ...filteredSubmissionQuestions,
+      responses: filteredSubmissionQuestions,
       totalResponses: submissionCount,
-      pageCount: 1,
+      pageCount: responsePageCount,
     };
 
     ctx.status = 200;
-    ctx.body = filteredSubmissionQuestions;
+    ctx.body = finalResponse;
     return;
   } catch (error) {
     ctx.status = 500;
     ctx.body = error;
+    console.log(error);
     return error;
   }
 });
@@ -119,7 +128,6 @@ interface Request {
 
 function parseQuestions(questions: Question[], filters: FilterClauseType[]) {
   let filteredTruth: boolean[] = [];
-
   filters.forEach((filter) => {
     const question: Question | undefined = questions.find(
       (question) => question.id === filter.id
