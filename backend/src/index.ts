@@ -136,7 +136,7 @@ function parseQuestions(questions: Question[], filters: FilterClauseType[]) {
       return;
     }
 
-    if (question.id == "birthdayId") {
+    if (question.type == "DatePicker") {
       question.value = new Date(question.value).getTime();
       filter.value = new Date(filter.value).getTime();
     }
