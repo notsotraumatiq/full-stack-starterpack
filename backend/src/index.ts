@@ -60,6 +60,11 @@ router.get("/:form_id/filteredResponses", async (ctx) => {
       }
     });
 
+    if (filteredSubmissionQuestions.length == 0) {
+      ctx.status = 404;
+      ctx.body = "";
+      return;
+    }
     const finalResponse = {
       responses: filteredSubmissionQuestions,
       totalResponses: submissionCount,
@@ -140,7 +145,7 @@ function parseQuestions(questions: Question[], filters: FilterClauseType[]) {
       evalCondition(question.value, filter.value, filter.condition)
     );
   });
-  if (filteredTruth.every((truth) => truth)) {
+  if (filteredTruth.length > 0 && filteredTruth.every((truth) => truth)) {
     return questions;
   }
 }
