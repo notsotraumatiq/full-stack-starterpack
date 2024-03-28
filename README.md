@@ -24,18 +24,13 @@ yarn install
 Start the server:
 
 ```bash
-yarn run start
+yarn dev
 ```
 
-Backend will be running on http://localhost:3000
+Backend will be running on http://localhost:80
 
-## Running the Frontend
+## Sample API
 
-Navigate to the frontend directory:
+- GET http://localhost:80/{formId}/filterResponses/?query=[FILTER_QUERY]
 
-```bash
-cd frontend
-yarn install
-yarn run dev
-```
-Frontend will be running on http://localhost:5173
+EXAMPLE: localhost:80/cLZojxk94ous/filteredResponses/?query=[{"id":"bE2Bo4cGUv49cjnqZ4UnkW","condition":"equals","value":"Johnny"}]
