@@ -19,15 +19,10 @@ app.listen(80, () => {
 router.get("/:form_id/filteredResponses", async (ctx) => {
   let serverResponse;
   const params = ctx.params;
-  const filtersParam: any = ctx.query;
+  let filtersParam: any = ctx.query;
+  filtersParam = JSON.parse(filtersParam.query);
 
-  if (
-    !params ||
-    !params.form_id ||
-    !filtersParam ||
-    !filtersParam.query ||
-    filtersParam.query.length == 0
-  ) {
+  if (!params || !params.form_id || !filtersParam || filtersParam.length == 0) {
     ctx.status = 400;
     ctx.body = "Form ID and filters are required";
     return;
@@ -52,7 +47,7 @@ router.get("/:form_id/filteredResponses", async (ctx) => {
       let filteredSubmission: any = {};
       let filteredQuestion = parseQuestions(
         submission.questions as Question[],
-        JSON.parse(filtersParam.query)
+        filtersParam as FilterClauseType[]
       );
 
       if (filteredQuestion) {
