@@ -1,0 +1,12 @@
+{
+  "name": "full-stack-starterpack",
+  "version": "1.0.0",
+  "description": "A starter pack for Web App React, TypeScript, Koa",
+  "repository": "https://github.com/notsotraumatiq/front-end-starterpack/",
+  "author": "notsotraumatiq <atiqpatel95@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "*"
+  ]
+}
