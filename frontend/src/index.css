@@ -1,3 +1,51 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  font-family: Helvetica, Arial, sans-serif;
+  text-align: center;
+}
+
+.minefield {
+  display: grid;
+  grid-gap: 5px;
+  background-color: #111;
+  margin: 30px auto;
+  position: relative;
+  max-width: 500px;
+}
+
+.mine.live {
+  background-color: #ec657c;
+}
+
+.mine {
+  background-color: #37e5af;
+  min-height: 10px;
+  cursor: pointer;
+  transition: all 200ms ease-in;
+  position: relative;
+  color: #fff;
+  text-align: center;
+  display: block;
+  font-size: 25px;
+  aspect-ratio: 1 / 1;
+}
+
+.mine .overlay {
+  position: absolute;
+  background-color: #2d2d2d;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  transition: all 200ms ease-in;
+  z-index: 2;
+  color: red;
+  font-size: 36px;
+}
+
+.mine .overlay:hover {
+  background-color: #8f6dbe;
+}
