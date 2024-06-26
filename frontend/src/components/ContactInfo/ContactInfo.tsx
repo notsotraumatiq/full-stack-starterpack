@@ -1,11 +1,8 @@
 import * as React from "react";
 import { Contact, ENDPOINT_URL } from "../ContactList/ContactList";
-import axiosInstance from "../../api/axios-config";
 import {
   CircularProgress,
-  TextField,
   Typography,
-  Button,
   Paper,
   Table,
   TableBody,
@@ -19,28 +16,30 @@ import useFetch from "../../hooks/useFetch";
 import ContactForm from "../ContactForm/ContactForm";
 
 export interface ContactProps {
-  contactId: string;
-  onDeleteSuccess: () => void;
+  contact: Contact;
+  contactData: Contact[] | null;
+  setContact: React.Dispatch<React.SetStateAction<Contact | undefined>>;
   isEditing: boolean;
   setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsFormVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  refetch: () => void;
 }
 
 export const ContactInfo: React.FC<ContactProps> = ({
-  contactId,
-  onDeleteSuccess,
+  contact,
   isEditing,
+  contactData,
   setIsEditing,
+  setContact,
+  setIsFormVisible,
+  refetch,
 }) => {
+  // Improvement Fetch histories here
   const {
-    data: contactData,
+    data: entireContact,
     loading,
     error,
-    refetch,
-  } = useFetch<Contact>(`${ENDPOINT_URL}/${contactId}`);
-  const [contact, setContact] = React.useState<Contact>();
-  React.useEffect(() => {
-    if (contactData) setContact(contactData);
-  }, [contactData]);
+  } = useFetch<Contact>(`${ENDPOINT_URL}/${contact.id}`);
 
   if (loading) {
     return <CircularProgress />;
@@ -81,7 +80,7 @@ export const ContactInfo: React.FC<ContactProps> = ({
       </TableRow>
     );
   }
-
+  console.log(contact);
   return (
     <div className="flex-col w-1/2 m-3">
       <ContactForm
@@ -89,42 +88,46 @@ export const ContactInfo: React.FC<ContactProps> = ({
         formType="ContactInfo"
         isEditing={isEditing}
         setIsEditing={setIsEditing}
-        refetch={refetch}
+        setContact={setContact}
+        onSuccess={refetch}
+        setIsFormVisible={setIsFormVisible}
       />
 
-      {contact && contact.histories && contact.histories.length > 0 && (
-        <TableContainer component={Paper} elevation={7} className="my-4">
-          <Typography
-            variant="h4"
-            fontWeight={700}
-            component="div"
-            style={{ padding: 16 }}
-          >
-            History
-          </Typography>
-          <Divider />
-          <Table className="" aria-label="simple table">
-            <TableHead>
-              <TableRow>
-                <TableCell>First Name</TableCell>
-                <TableCell>Last Name</TableCell>
-                <TableCell>Phone</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Last Updated</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {contact.histories.map((history) => (
-                <ContactHistoryRow
-                  key={history.id}
-                  history={history}
-                  contact={contact}
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+      {entireContact &&
+        entireContact.histories &&
+        entireContact.histories.length > 0 && (
+          <TableContainer component={Paper} elevation={7} className="my-4">
+            <Typography
+              variant="h4"
+              fontWeight={700}
+              component="div"
+              style={{ padding: 16 }}
+            >
+              History
+            </Typography>
+            <Divider />
+            <Table aria-label="simple table">
+              <TableHead>
+                <TableRow>
+                  <TableCell>First Name</TableCell>
+                  <TableCell>Last Name</TableCell>
+                  <TableCell>Phone</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Last Updated</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {entireContact.histories.map((history) => (
+                  <ContactHistoryRow
+                    key={history.id}
+                    history={history}
+                    contact={contact}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
     </div>
   );
 };

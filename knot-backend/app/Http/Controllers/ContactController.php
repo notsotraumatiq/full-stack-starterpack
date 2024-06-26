@@ -7,7 +7,7 @@ use App\Models\ContactHistory;
 use App\Http\Requests\StoreContactRequest;
 use App\Http\Requests\UpdateContactRequest;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 class ContactController extends Controller
 {
     // Get all contacts
@@ -29,7 +29,7 @@ class ContactController extends Controller
     public function store(StoreContactRequest $request)
     {
         // Simulate slow response
-        // sleep(20);
+        sleep(20);
 
         $contact = Contact::create($request->validated());
 
@@ -39,23 +39,31 @@ class ContactController extends Controller
     // Update a specific contact
     public function update(UpdateContactRequest $request, $id)
     {
-        $contact = Contact::findOrFail($id);
+        try {
+            $contact = Contact::findOrFail($id);
 
-        DB::transaction(function () use ($contact, $request) {
-            ContactHistory::create([
-                'contact_id' => $contact->id,
-                'first_name' => $contact->first_name,
-                'last_name' => $contact->last_name,
-                'email' => $contact->email,
-                'phone' => $contact->phone,
-                'changed_at' => now()
-            ]);
+            DB::transaction(function () use ($contact, $request) {
+                ContactHistory::create([
+                    'contact_id' => $contact->id,
+                    'first_name' => $contact->first_name,
+                    'last_name' => $contact->last_name,
+                    'email' => $contact->email,
+                    'phone' => $contact->phone,
+                    'changed_at' => now()
+                ]);
 
-            $contact->update($request->validated());
-        });
+                $contact->update($request->validated());
+            });
 
-        return response()->json($contact, 200);
+            return response()->json($contact, 200);
+
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['error' => 'Contact not found'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred while updating the contact'], 500);
+        }
     }
+
 
     // Delete a specific contact
     public function destroy($id)

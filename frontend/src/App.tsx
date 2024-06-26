@@ -1,14 +1,18 @@
 import { useState } from "react";
 import "./App.css";
-import ContactList from "./components/ContactList/ContactList";
+import ContactList, {
+  Contact,
+  ENDPOINT_URL,
+} from "./components/ContactList/ContactList";
 import ContactInfo from "./components/ContactInfo/ContactInfo";
-import { Button, IconButton } from "@mui/material";
+import { Button, CircularProgress } from "@mui/material";
 import ContactForm from "./components/ContactForm/ContactForm";
 import AddIcon from "@mui/icons-material/Add"; // Import the AddIcon component
 import RemoveIcon from "@mui/icons-material/Remove"; // Import the RemoveIcon component
 
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
+import useFetch from "./hooks/useFetch";
 
 const darkTheme = createTheme({
   palette: {
@@ -17,13 +21,34 @@ const darkTheme = createTheme({
 });
 
 function App() {
-  const [contactId, setContactId] = useState<string>();
+  const [contact, setContact] = useState<Contact>();
   const [isFormVisible, setIsFormVisible] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const {
+    data: contacts,
+    loading,
+    error,
+    refetch,
+  } = useFetch<Contact[]>(ENDPOINT_URL) || [];
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen w-screen bg-night">
+        <CircularProgress />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen w-screen bg-night">
+        <h1>Error fetching data</h1>
+      </div>
+    );
+  }
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
-
       <div className="flex flex-col  w-screen h-screen">
         <nav className="w-full text-start">
           <h1 className="text-4xl font-bold m-3">Welcome to Atiqs Phonebook</h1>
@@ -38,7 +63,7 @@ function App() {
             size="large"
             color="primary"
             onClick={() => {
-              setContactId(undefined);
+              setContact(undefined);
               setIsFormVisible(!isFormVisible);
             }}
           >
@@ -47,22 +72,30 @@ function App() {
         </nav>
         <div className="flex-1 flex h-[calc(100vh-112px)]">
           <ContactList
-            setContactId={setContactId}
+            contacts={contacts}
+            setContact={setContact}
             isFormVisible={isFormVisible}
             setIsFormVisible={setIsFormVisible}
           />
-          {contactId && (
+          {contact && (
             <ContactInfo
-              contactId={contactId}
+              contact={contact}
+              contactData={contacts}
+              refetch={refetch}
               isEditing={isEditing}
               setIsEditing={setIsEditing}
+              setContact={setContact}
+              setIsFormVisible={setIsFormVisible}
             />
           )}
           {isFormVisible && (
             <ContactForm
               formType={"Add New Contact"}
               isEditing={true}
-              setContactId={setContactId}
+              setContact={setContact}
+              setIsEditing={setIsEditing}
+              setIsFormVisible={setIsFormVisible}
+              onSuccess={refetch}
             />
           )}
         </div>

@@ -42,9 +42,15 @@ The backend server will be running at [http://localhost:8000](http://localhost:8
    cd frontend
    ```
 
-2. **Start the frontend server**:
+2. **Install the dependencies**:
+
    ```bash
-   docker-compose up
+   yarn install
+   ```
+
+3. **Start the frontend server**:
+   ```bash
+   yarn dev
    ```
 
 The frontend will be running at [http://localhost:5173](http://localhost:5173).

@@ -6,22 +6,26 @@ import {
   TextField,
   Typography,
   Grid,
+  CircularProgress,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
 import axiosInstance from "../../api/axios-config";
 import * as Yup from "yup";
-import { Formik, Form, Field, ErrorMessage, FieldProps } from "formik";
-import { ENDPOINT_URL } from "../ContactList/ContactList";
+import { Formik, Form, Field, FieldProps } from "formik";
+import { Contact, ENDPOINT_URL } from "../ContactList/ContactList";
+import onFailure from "../OnFailure/OnFailure";
 
 export interface ContactFormProps {
   contactInfo?: any;
   formType: string;
+
   isEditing: boolean;
   setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
-  setContactId?: React.Dispatch<React.SetStateAction<string | undefined>>;
-  refetch: () => void;
+  setContact: React.Dispatch<React.SetStateAction<Contact | undefined>>;
+  onSuccess: () => void;
+  setIsFormVisible: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // Define the validation schema using Yup
@@ -44,19 +48,20 @@ const ContactForm: React.FC<ContactFormProps> = ({
   formType,
   isEditing,
   setIsEditing,
-  setContactId,
-  refetch,
+  setContact,
+  onSuccess,
+  setIsFormVisible,
 }) => {
-  const [contact, setContact] = useState({
+  const [singleContact, setSingleContact] = useState({
     first_name: "",
     last_name: "",
     email: "",
     phone: "",
   });
-
+  const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
     if (contactInfo) {
-      setContact({
+      setSingleContact({
         first_name: contactInfo.first_name || "",
         last_name: contactInfo.last_name || "",
         email: contactInfo.email || "",
@@ -66,19 +71,30 @@ const ContactForm: React.FC<ContactFormProps> = ({
   }, [contactInfo]);
 
   const handleDelete = async () => {
+    setIsLoading(true);
     try {
       await axiosInstance.delete(`${ENDPOINT_URL}/${contactInfo?.id}`);
       setIsEditing(false);
-      setContactId && setContactId(undefined);
-      refetch();
-    } catch (error) {
+      setSingleContact({
+        first_name: "",
+        last_name: "",
+        email: "",
+        phone: "",
+      });
+      setContact(undefined);
+      onSuccess();
+    } catch (error: any) {
       console.error(error);
+      onFailure(error);
     }
+    setIsLoading(false);
   };
 
   return (
     <div className={"flex flex-col"}>
-      {!isEditing ? (
+      {isLoading ? (
+        <CircularProgress className="mx-auto" />
+      ) : !isEditing ? (
         <Paper elevation={3} className="px-4">
           <Typography
             variant="h4"
@@ -96,7 +112,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
               </Typography>
             </Grid>
             <Grid item xs={8}>
-              <Typography variant="h6">{contact.first_name}</Typography>
+              <Typography variant="h6">{singleContact.first_name}</Typography>
             </Grid>
             <Grid item xs={4}>
               <Typography variant="h6">
@@ -104,7 +120,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
               </Typography>
             </Grid>
             <Grid item xs={8}>
-              <Typography variant="h6">{contact.last_name}</Typography>
+              <Typography variant="h6">{singleContact.last_name}</Typography>
             </Grid>
             <Grid item xs={4}>
               <Typography variant="h6">
@@ -112,7 +128,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
               </Typography>
             </Grid>
             <Grid item xs={8}>
-              <Typography variant="h6">{contact.email}</Typography>
+              <Typography variant="h6">{singleContact.email}</Typography>
             </Grid>
             <Grid item xs={4}>
               <Typography variant="h6">
@@ -120,7 +136,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
               </Typography>
             </Grid>
             <Grid item xs={8}>
-              <Typography variant="h6">{contact.phone}</Typography>
+              <Typography variant="h6">{singleContact.phone}</Typography>
             </Grid>
           </Grid>
           <Button
@@ -148,18 +164,23 @@ const ContactForm: React.FC<ContactFormProps> = ({
               : ENDPOINT_URL;
             const method = contactInfo?.id ? "put" : "post";
 
+            setIsLoading(true);
             try {
               const response = await axiosInstance[method](endpoint, values);
-              console.log("Response:", response);
-            } catch (error) {
+              setContact(response.data);
+              onSuccess();
+            } catch (error: any) {
               console.error(error);
+              onFailure(error);
             } finally {
               setSubmitting(false);
               setIsEditing(false);
+              setIsFormVisible(false);
+              setIsLoading(false);
             }
           }}
         >
-          {({ isSubmitting, resetForm, errors, touched }) => (
+          {({ isSubmitting }) => (
             <Paper elevation={2} className="p-3 mt-3">
               <Typography
                 variant="h4"
@@ -211,7 +232,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
                   disabled={isSubmitting}
                   sx={{ mt: 2 }}
                 >
-                  Submit
+                  {contactInfo?.id ? "Update" : "Create"}
                 </Button>
                 <Button
                   type="button"
@@ -254,7 +275,7 @@ const CustomTextField: React.FC<FieldProps> = ({
       {...field}
       {...props}
       error={!!errorText}
-      helperText={errorText}
+      helperText={errorText ? errorText.toString() : ""}
     />
   );
 };
