@@ -1,0 +1,25 @@
+/* Hide scrollbar by default */
+.scrollable-element::-webkit-scrollbar {
+  width: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.scrollable-element {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent; /* For Firefox */
+}
+
+/* Show scrollbar on hover */
+.scrollable-element:hover::-webkit-scrollbar-thumb {
+  background: #a0a0a0; /* Scrollbar thumb color */
+  border-radius: 6px;
+}
+
+.scrollable-element:hover {
+  scrollbar-color: #a0a0a0 transparent; /* For Firefox */
+}
+
+.scrollable-element:hover::-webkit-scrollbar {
+  opacity: 1;
+}
