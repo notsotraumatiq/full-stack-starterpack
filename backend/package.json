@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@koa/cors": "^5.0.0",
     "@koa/router": "^12.0.1",
     "dotenv": "^16.4.5",
     "koa": "^2.15.0",
@@ -22,6 +23,7 @@
     "@types/axios": "^0.14.0",
     "@types/koa": "^2.15.0",
     "@types/koa-bodyparser": "^4.3.12",
+    "@types/koa__cors": "^5.0.0",
     "@types/koa__router": "^12.0.4",
     "@types/node": "^16.11.15",
     "nodemon": "^3.1.0",
