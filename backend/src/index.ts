@@ -1,10 +1,10 @@
-import koa from "koa";
-import cors from "@koa/cors";
-const app = new koa();
+import express, { Request, Response, Express, NextFunction } from "express";
 
-app.use(cors());
-app.use((ctx) => {
-  ctx.body = "Hello World";
+const app: Express = express();
+const PORT: number = 3000;
+
+app.get("/", (req: Request, res: Response) => {
+  return res.send("Hello World");
 });
 
-app.listen(3000);
+app.listen(PORT, () => console.log(`Server is running on ${PORT}`));
